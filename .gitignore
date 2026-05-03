@@ -1,0 +1,28 @@
+# Visual Studio / C / C++
+.vs/
+Debug/
+Release/
+x64/
+x86/
+
+*.exe
+*.obj
+*.o
+*.out
+*.pdb
+*.ilk
+*.idb
+*.ipch
+*.tlog
+*.log
+
+*.suo
+*.user
+*.vcxproj.user
+
+# output files
+output.txt
+
+# system files
+.DS_Store
+Thumbs.db
