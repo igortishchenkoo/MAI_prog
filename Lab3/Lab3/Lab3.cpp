@@ -1,431 +1,339 @@
+/*
+ * Лабораторная работа №3. Вариант 7: точка - отрезок - треугольник - треугольная призма.
+ * Переопределение методов и перегрузка конструкторов.
+ * Монолитный файл с комментариями.
+ */
+
 #include <windows.h>
-#include <iostream>
 #include <math.h>
+#include <iostream>
+#include <cstdlib>
 
-HDC hdc;
+const double Pi = 3.14159265358979323846;
 
-class Point
-{
-protected:
-    short x, y;
-    size_t color;
-public:
-    Point();
-    Point(short x, short y);
-    Point(short x, short y, size_t color);
-
-    short GetX();
-    short GetY();
-    size_t GetColor();
-    void PutX(short newX);
-    void PutY(short newY);
-    void PutColor(size_t newColor);
-
-    void Show();
-    void Hide();
-    void Move(short dx, short dy);
-};
-
-Point p1;                          // вызов первого
-Point p2(100, 200);                // вызов второго
-Point p3(300, 400, RGB(255, 0, 0));  // вызов третьего
-
-class Line : public Point
-{
-protected:
-    short x2, y2;
-public:
-    Line();
-    Line(short x1, short y1, short x2, short y2);
-    Line(short x1, short y1, short x2, short y2, size_t color);
-
-    short GetX2();
-    short GetY2();
-    void PutX2(short newX2);
-    void PutY2(short newY2);
-
-    void Show();   // переопределение
-    void Hide();   // переопределение
-    void Move(short dx, short dy);  // переопределение
-
-    float Length();
-};
-
-class Triangle : public Line
-{
-protected:
-    short x3, y3;
-public:
-    Triangle();
-    Triangle(short x1, short y1, short x2, short y2, short x3, short y3);
-    Triangle(short x1, short y1, short x2, short y2,
-        short x3, short y3, size_t color);
-
-    short GetX3();
-    short GetY3();
-    void PutX3(short newX3);
-    void PutY3(short newY3);
-
-    void Show();   // переопределение
-    void Hide();   // переопределение
-    void Move(short dx, short dy);  // переопределение
-
-    float Area();
-};
-
-class TriPrism : public Triangle
-{
-protected:
-    short H;
-public:
-    TriPrism();
-    TriPrism(short x1, short y1, short x2, short y2,
-        short x3, short y3, short H);
-    TriPrism(short x1, short y1, short x2, short y2,
-        short x3, short y3, short H, size_t color);
-
-    short GetH();
-    void PutH(short newH);
-
-    void Show();   // переопределение
-    void Hide();   // переопределение
-    void Move(short dx, short dy);  // переопределение
-
-    float Volume();
-};
-
-Point::Point()
-{
-    x = 800;
-    y = 450;
-    color = RGB(127, 127, 127);
-}
-
-Point::Point(short x, short y)
-{
-    this->x = x;
-    this->y = y;
-    color = RGB(127, 127, 127);
-}
-
-Point::Point(short x, short y, size_t color)
-{
-    this->x = x;
-    this->y = y;
-    this->color = color;
-}
-
-short Point::GetX() { return x; }
-short Point::GetY() { return y; }
-size_t Point::GetColor() { return color; }
-void Point::PutX(short newX) { x = newX; }
-void Point::PutY(short newY) { y = newY; }
-void Point::PutColor(size_t newColor) { color = newColor; }
-
-void Point::Show()
-{
-    HPEN pen = CreatePen(PS_SOLID, 4, (COLORREF)color);
-    HPEN oldPen = (HPEN)SelectObject(hdc, pen);
-    Ellipse(hdc, x - 3, y - 3, x + 3, y + 3);
-    SelectObject(hdc, oldPen);
-    DeleteObject(pen);
-}
-
-void Point::Hide()
-{
-    size_t temp = color;
-    color = RGB(241, 241, 241);
-    Show();
-    color = temp;
-}
-
-void Point::Move(short dx, short dy)
-{
-    Hide();
-    x += dx;
-    y += dy;
-    Show();
-}
-
-
-Line::Line() : Point()
-{
-    x2 = 900;
-    y2 = 550;
-}
-
-Line::Line(short x1, short y1, short x2, short y2)
-    : Point(x1, y1)
-{
-    this->x2 = x2;
-    this->y2 = y2;
-}
-
-Line::Line(short x1, short y1, short x2, short y2, size_t color)
-    : Point(x1, y1, color)
-{
-    this->x2 = x2;
-    this->y2 = y2;
-}
-
-short Line::GetX2() { return x2; }
-short Line::GetY2() { return y2; }
-void Line::PutX2(short newX2) { x2 = newX2; }
-void Line::PutY2(short newY2) { y2 = newY2; }
-
-void Line::Show()
-{
-    HPEN pen = CreatePen(PS_SOLID, 2, (COLORREF)color);
-    HPEN oldPen = (HPEN)SelectObject(hdc, pen);
-    MoveToEx(hdc, x, y, NULL);
+// Вспомогательная функция рисования отрезка
+void DrawLine(HDC hdc, short x1, short y1, short x2, short y2) {
+    MoveToEx(hdc, x1, y1, NULL);
     LineTo(hdc, x2, y2);
-    SelectObject(hdc, oldPen);
-    DeleteObject(pen);
 }
 
-void Line::Hide()
-{
-    size_t temp = color;
-    color = RGB(241, 241, 241);
-    Show();
-    color = temp;
-}
+// Глобальный контекст устройства (рисование)
+HDC hdc = NULL;
 
-void Line::Move(short dx, short dy)
-{
-    Hide();
-    x += dx;  y += dy;
-    x2 += dx;  y2 += dy;
-    Show();
-}
-
-float Line::Length()
-{
-    short dx = x2 - x;
-    short dy = y2 - y;
-    return sqrtf((float)(dx * dx + dy * dy));
-}
-
-Triangle::Triangle() : Line()
-{
-    x3 = 850;
-    y3 = 600;
-}
-
-Triangle::Triangle(short x1, short y1, short x2, short y2,
-    short x3, short y3)
-    : Line(x1, y1, x2, y2)
-{
-    this->x3 = x3;
-    this->y3 = y3;
-}
-
-Triangle::Triangle(short x1, short y1, short x2, short y2,
-    short x3, short y3, size_t color)
-    : Line(x1, y1, x2, y2, color)
-{
-    this->x3 = x3;
-    this->y3 = y3;
-}
-
-short Triangle::GetX3() { return x3; }
-short Triangle::GetY3() { return y3; }
-void Triangle::PutX3(short newX3) { x3 = newX3; }
-void Triangle::PutY3(short newY3) { y3 = newY3; }
-
-void Triangle::Show()
-{
-    HPEN pen = CreatePen(PS_SOLID, 2, (COLORREF)color);
-    HPEN oldPen = (HPEN)SelectObject(hdc, pen);
-    MoveToEx(hdc, x, y, NULL);
-    LineTo(hdc, x2, y2);
-    LineTo(hdc, x3, y3);
-    LineTo(hdc, x, y);
-    SelectObject(hdc, oldPen);
-    DeleteObject(pen);
-}
-
-void Triangle::Hide()
-{
-    size_t temp = color;
-    color = RGB(241, 241, 241);
-    Show();
-    color = temp;
-}
-
-void Triangle::Move(short dx, short dy)
-{
-    Hide();
-    x += dx;  y += dy;
-    x2 += dx;  y2 += dy;
-    x3 += dx;  y3 += dy;
-    Show();
-}
-
-float Triangle::Area()
-{
-    float s = (float)(x * (y2 - y3) + x2 * (y3 - y) + x3 * (y - y2));
-    return fabsf(s) / 2.0f;
-}
-
-TriPrism::TriPrism() : Triangle()
-{
-    H = 30;
-}
-
-TriPrism::TriPrism(short x1, short y1, short x2, short y2,
-    short x3, short y3, short H)
-    : Triangle(x1, y1, x2, y2, x3, y3)
-{
-    this->H = H;
-}
-
-TriPrism::TriPrism(short x1, short y1, short x2, short y2,
-    short x3, short y3, short H, size_t color)
-    : Triangle(x1, y1, x2, y2, x3, y3, color)
-{
-    this->H = H;
-}
-
-short TriPrism::GetH() { return H; }
-void TriPrism::PutH(short newH) { H = newH; }
-
-void TriPrism::Show()
-{
-    HPEN pen = CreatePen(PS_SOLID, 2, (COLORREF)color);
-    HPEN oldPen = (HPEN)SelectObject(hdc, pen);
-
-    short shift = H;
-    short bx1 = x + shift, by1 = y - shift;
-    short bx2 = x2 + shift, by2 = y2 - shift;
-    short bx3 = x3 + shift, by3 = y3 - shift;
-
-    MoveToEx(hdc, x, y, NULL);
-    LineTo(hdc, x2, y2);
-    LineTo(hdc, x3, y3);
-    LineTo(hdc, x, y);
-
-    MoveToEx(hdc, bx1, by1, NULL);
-    LineTo(hdc, bx2, by2);
-    LineTo(hdc, bx3, by3);
-    LineTo(hdc, bx1, by1);
-
-    MoveToEx(hdc, x, y, NULL);  LineTo(hdc, bx1, by1);
-    MoveToEx(hdc, x2, y2, NULL);  LineTo(hdc, bx2, by2);
-    MoveToEx(hdc, x3, y3, NULL);  LineTo(hdc, bx3, by3);
-
-    SelectObject(hdc, oldPen);
-    DeleteObject(pen);
-}
-
-void TriPrism::Hide()
-{
-    size_t temp = color;
-    color = RGB(241, 241, 241);
-    Show();
-    color = temp;
-}
-
-void TriPrism::Move(short dx, short dy)
-{
-    Hide();
-    x += dx;  y += dy;
-    x2 += dx;  y2 += dy;
-    x3 += dx;  y3 += dy;
-    Show();
-}
-
-float TriPrism::Volume()
-{
-    return Area() * (float)H;
-}
-
-int main()
-{
-    setlocale(LC_ALL, "RUSSIAN");
-    SetConsoleCP(1251);
-    system("color F0");
-
-    HWND hwnd = GetConsoleWindow();
-    if (hwnd == NULL) return 1;
-    hdc = GetWindowDC(hwnd);
-    if (hdc == NULL) return 1;
-
-    std::cout << "Lab 3 - Polymorphism" << std::endl;
-    std::cout << "Override + Overload" << std::endl;
-    std::cout << std::endl;
-
-    int SHIFT = 800;
-
-    // === 4 объекта, созданных через ПОЛНЫЕ конструкторы ===
-    Point    p(100 + SHIFT, 100, RGB(255, 0, 0));
-    Line     l(180 + SHIFT, 100, 280 + SHIFT, 200, RGB(0, 180, 0));
-    Triangle t(350 + SHIFT, 100, 470 + SHIFT, 100, 410 + SHIFT, 220, RGB(0, 0, 255));
-    TriPrism tp(100 + SHIFT, 280, 220 + SHIFT, 280, 160 + SHIFT, 400, 40, RGB(150, 0, 150));
-
-    std::cout << "Press ENTER to draw all objects via Show()..." << std::endl;
-    getchar();
-
-    // Каждый объект вызывает СВОЙ Show() благодаря переопределению
-    p.Show();
-    l.Show();
-    t.Show();
-    tp.Show();
-
-    std::cout << std::endl
-        << "All objects drawn correctly through unified Show() method." << std::endl
-        << "(In Lab 2 calling t.Show() would draw only a point - now fixed by override)" << std::endl;
-
-    std::cout << std::endl << "Press ENTER for movement demo..." << std::endl;
-    getchar();
-
-    for (int i = 0; i < 15; i++)
-    {
-        p.Move(2, 1);
-        l.Move(1, 2);
-        t.Move(2, 1);
-        tp.Move(1, 1);
-        Sleep(50);
+// ------------------------------------------------------------------
+// БАЗОВЫЙ КЛАСС: Точка
+// ------------------------------------------------------------------
+class Point {
+protected:
+    short X, Y;     // координаты
+    size_t C;       // цвет
+public:
+    // --- Перегруженные конструкторы ---
+    // 1) Конструктор с параметрами и значениями по умолчанию (полный набор)
+    Point(short x = 0, short y = 0, size_t c = RGB(0, 0, 0))
+        : X(x), Y(y), C(c) {
     }
 
-    // === Демонстрация полиморфных конструкторов ===
-    std::cout << std::endl
-        << "=== Overloaded constructors demo ===" << std::endl
-        << "Creating objects with different argument counts..." << std::endl;
-    std::cout << "Press ENTER..." << std::endl;
+    // 2) Конструктор по умолчанию (без параметров) – явно задаём нули
+    // (в данном случае предыдущий конструктор с умолчаниями уже покрывает этот случай,
+    //  но для наглядности перегрузки оставим оба варианта, можно объединить)
+    // Point() : X(0), Y(0), C(RGB(0,0,0)) {}   // раскомментировать, если нужно строго два
+
+    // Акцессоры
+    short GetX() const { return X; }
+    short GetY() const { return Y; }
+    size_t GetC() const { return C; }
+    void PutX(short x) { X = x; }
+    void PutY(short y) { Y = y; }
+    void PutC(size_t c) { C = c; }
+
+    // Методы рисования (будут переопределяться в потомках)
+    void Show() {
+        HPEN pen = CreatePen(PS_SOLID, 2, C);
+        SelectObject(hdc, pen);
+        // Рисуем точку как маленький круг
+        short R = 2, Ri;
+        for (char i = -1; i < 2; ++i) {
+            Ri = R * i;
+            Arc(hdc, X - Ri, Y - Ri, X + Ri, Y + Ri, X, Y + Ri, X, Y + Ri);
+        }
+        DeleteObject(pen);
+    }
+
+    void Hide() {
+        size_t oldC = C;
+        C = RGB(241, 241, 241);   // цвет фона
+        Show();
+        C = oldC;
+    }
+
+    void MoveTo(short nx, short ny) {
+        Hide();
+        PutX(nx);
+        PutY(ny);
+        Show();
+    }
+};
+
+// ------------------------------------------------------------------
+// КЛАСС-НАСЛЕДНИК: Отрезок
+// ------------------------------------------------------------------
+class Line : public Point {
+protected:
+    short X2, Y2;   // координаты второго конца
+public:
+    // --- Перегруженные конструкторы ---
+    // 1) Полный конструктор
+    Line(short x1, short y1, short x2, short y2, size_t c)
+        : Point(x1, y1, c), X2(x2), Y2(y2) {
+    }
+
+    // 2) Конструктор по умолчанию (вызывает Point по умолчанию)
+    Line() : Point(), X2(0), Y2(0) {}
+
+    // Акцессоры
+    short GetX2() const { return X2; }
+    short GetY2() const { return Y2; }
+    void PutX2(short x) { X2 = x; }
+    void PutY2(short y) { Y2 = y; }
+
+    // Переопределённые методы (заменяют Draw, Clean, Move)
+    void Show() {
+        HPEN pen = CreatePen(PS_SOLID, 2, C);
+        SelectObject(hdc, pen);
+        DrawLine(hdc, X, Y, X2, Y2);   // используем унаследованные X,Y
+        DeleteObject(pen);
+    }
+
+    void Hide() {
+        size_t oldC = C;
+        C = RGB(241, 241, 241);
+        Show();                         // вызовет переопределённый Show
+        C = oldC;
+    }
+
+    void MoveTo(short nx, short ny) {
+        // Перемещаем оба конца так, чтобы первая точка оказалась в (nx,ny)
+        short dx = nx - X;
+        short dy = ny - Y;
+        Hide();
+        X += dx; Y += dy;
+        X2 += dx; Y2 += dy;
+        Show();
+    }
+
+    // Длина остаётся
+    double Length() const {
+        return sqrt(pow(X2 - X, 2.0) + pow(Y2 - Y, 2.0));
+    }
+};
+
+// ------------------------------------------------------------------
+// КЛАСС-НАСЛЕДНИК: Треугольник
+// ------------------------------------------------------------------
+class Triangle : public Line {
+protected:
+    short X3, Y3;   // третья вершина
+public:
+    // --- Перегруженные конструкторы ---
+    // 1) Полный
+    Triangle(short x1, short y1, short x2, short y2,
+        short x3, short y3, size_t c)
+        : Line(x1, y1, x2, y2, c), X3(x3), Y3(y3) {
+    }
+
+    // 2) По умолчанию
+    Triangle() : Line(), X3(0), Y3(0) {}
+
+    // Акцессоры
+    short GetX3() const { return X3; }
+    short GetY3() const { return Y3; }
+    void PutX3(short x) { X3 = x; }
+    void PutY3(short y) { Y3 = y; }
+
+    // Переопределённые методы
+    void Show() {
+        HPEN pen = CreatePen(PS_SOLID, 2, C);
+        SelectObject(hdc, pen);
+        DrawLine(hdc, X, Y, X2, Y2);
+        DrawLine(hdc, X2, Y2, X3, Y3);
+        DrawLine(hdc, X3, Y3, X, Y);
+        DeleteObject(pen);
+    }
+
+    void Hide() {
+        size_t oldC = C;
+        C = RGB(241, 241, 241);
+        Show();
+        C = oldC;
+    }
+
+    void MoveTo(short nx, short ny) {
+        short dx = nx - X;
+        short dy = ny - Y;
+        Hide();
+        X += dx; Y += dy;
+        X2 += dx; Y2 += dy;
+        X3 += dx; Y3 += dy;
+        Show();
+    }
+
+    double Perimeter() const {
+        double a = sqrt(pow(X2 - X, 2.0) + pow(Y2 - Y, 2.0));
+        double b = sqrt(pow(X3 - X2, 2.0) + pow(Y3 - Y2, 2.0));
+        double c = sqrt(pow(X - X3, 2.0) + pow(Y - Y3, 2.0));
+        return a + b + c;
+    }
+
+    double Area() const {
+        double a = sqrt(pow(X2 - X, 2.0) + pow(Y2 - Y, 2.0));
+        double b = sqrt(pow(X3 - X2, 2.0) + pow(Y3 - Y2, 2.0));
+        double c = sqrt(pow(X - X3, 2.0) + pow(Y - Y3, 2.0));
+        double p = (a + b + c) / 2.0;
+        return sqrt(p * (p - a) * (p - b) * (p - c));
+    }
+};
+
+// ------------------------------------------------------------------
+// КЛАСС-НАСЛЕДНИК: Треугольная призма
+// ------------------------------------------------------------------
+class TriangularPrism : public Triangle {
+protected:
+    short Height;   // высота призмы
+public:
+    // --- Перегруженные конструкторы ---
+    // 1) Полный
+    TriangularPrism(short x1, short y1, short x2, short y2,
+        short x3, short y3, short height, size_t c)
+        : Triangle(x1, y1, x2, y2, x3, y3, c), Height(height) {
+    }
+
+    // 2) По умолчанию
+    TriangularPrism() : Triangle(), Height(0) {}
+
+    // Акцессор
+    short GetHeight() const { return Height; }
+    void PutHeight(short h) { Height = h; }
+
+    // Переопределённые методы
+    void Show() {
+        HPEN pen = CreatePen(PS_SOLID, 2, C);
+        SelectObject(hdc, pen);
+
+        // Нижнее основание (текущий треугольник)
+        DrawLine(hdc, X, Y, X2, Y2);
+        DrawLine(hdc, X2, Y2, X3, Y3);
+        DrawLine(hdc, X3, Y3, X, Y);
+
+        // Верхнее основание (смещено по Y на Height вверх)
+        short X1t = X, Y1t = Y - Height;
+        short X2t = X2, Y2t = Y2 - Height;
+        short X3t = X3, Y3t = Y3 - Height;
+        DrawLine(hdc, X1t, Y1t, X2t, Y2t);
+        DrawLine(hdc, X2t, Y2t, X3t, Y3t);
+        DrawLine(hdc, X3t, Y3t, X1t, Y1t);
+
+        // Боковые рёбра
+        DrawLine(hdc, X, Y, X1t, Y1t);
+        DrawLine(hdc, X2, Y2, X2t, Y2t);
+        DrawLine(hdc, X3, Y3, X3t, Y3t);
+
+        DeleteObject(pen);
+    }
+
+    void Hide() {
+        size_t oldC = C;
+        C = RGB(241, 241, 241);
+        Show();
+        C = oldC;
+    }
+
+    void MoveTo(short nx, short ny) {
+        short dx = nx - X;
+        short dy = ny - Y;
+        Hide();
+        X += dx; Y += dy;
+        X2 += dx; Y2 += dy;
+        X3 += dx; Y3 += dy;
+        // Height не меняется, верхнее основание автоматически пересчитается при Show()
+        Show();
+    }
+
+    double Volume() const {
+        return Area() * Height;   // площадь основания унаследована от Triangle
+    }
+};
+
+// ------------------------------------------------------------------
+// ОСНОВНАЯ ПРОГРАММА
+// ------------------------------------------------------------------
+int main() {
+    system("color f0");                     // светлый фон консоли
+    SetConsoleOutputCP(1251);               // поддержка кириллицы
+    SetConsoleCP(1251);
+
+    HWND hwnd = GetConsoleWindow();
+    hdc = GetWindowDC(hwnd);
+
+    std::cout << "Лабораторная работа №3. Переопределение и перегрузка.\n";
+    std::cout << "Вариант 7: точка - отрезок - треугольник - треугольная призма.\n\n";
+
+    // ---------- Часть 1: Демонстрация переопределённых методов ----------
+    std::cout << "1. Рисование с помощью единого имени Show():\n";
+
+    // Создаём объекты с полными конструкторами (сдвинуты вправо на 350)
+    Point pt(200 + 350, 400, RGB(255, 0, 0));                     // красная точка
+    Line ln(200 + 350, 350, 350 + 350, 400, RGB(0, 0, 255));      // синий отрезок
+    Triangle tr(400 + 350, 300, 500 + 350, 400,
+        450 + 350, 500, RGB(0, 128, 0));                  // зелёный треугольник
+    TriangularPrism pr(550 + 350, 350, 650 + 350, 380,
+        600 + 350, 450, 70, RGB(255, 0, 255));     // фиолетовая призма
+
+    // Вызываем Show() – теперь все рисуются корректно
+    pt.Show();   getchar();
+    ln.Show();   getchar();
+    tr.Show();   getchar();
+    pr.Show();   getchar();
+
+    // Двигаем с помощью MoveTo – также работает правильно
+    std::cout << "2. Перемещение объектов (MoveTo):\n";
+    pt.MoveTo(300 + 350, 450); getchar();
+    ln.MoveTo(250 + 350, 380); getchar();   // перемещается базовая точка, отрезок сдвигается
+    tr.MoveTo(450 + 350, 350); getchar();
+    pr.MoveTo(600 + 350, 400); getchar();
+
+    // ---------- Часть 2: Перегруженные конструкторы ----------
+    std::cout << "3. Конструкторы по умолчанию (объекты в левой части экрана):\n";
+
+    // Создаём объекты конструкторами без параметров, затем задаём им нужные параметры
+    Point pDef;               // (0,0, чёрный)
+    Line lDef;                // (0,0)-(0,0), чёрный
+    Triangle tDef;            // три вершины в (0,0)
+    TriangularPrism prDef;    // всё в нулях
+
+    // Присвоим им какие-нибудь координаты через сеттеры, чтобы увидеть на экране
+    pDef.PutX(100); pDef.PutY(200); pDef.PutC(RGB(255, 255, 0)); // жёлтая точка
+    lDef.PutX(100); lDef.PutY(150); lDef.PutX2(200); lDef.PutY2(250); lDef.PutC(RGB(0, 255, 255)); // голубой отрезок
+    tDef.PutX(100); tDef.PutY(200); tDef.PutX2(200); tDef.PutY2(300);
+    tDef.PutX3(150); tDef.PutY3(250); tDef.PutC(RGB(255, 128, 0)); // оранжевый треугольник
+    prDef.PutX(80); prDef.PutY(300); prDef.PutX2(180); prDef.PutY2(350);
+    prDef.PutX3(130); prDef.PutY3(400); prDef.PutHeight(60); prDef.PutC(RGB(128, 0, 255)); // сиреневая призма
+
+    // Покажем их
+    pDef.Show();    getchar();
+    lDef.Show();    getchar();
+    tDef.Show();    getchar();
+    prDef.Show();   getchar();
+
+    // Вычислим параметры
+    std::cout << "\nГеометрические параметры:\n";
+    std::cout << "Длина отрезка: " << ln.Length() << std::endl;
+    std::cout << "Периметр треугольника: " << tr.Perimeter() << std::endl;
+    std::cout << "Площадь треугольника: " << tr.Area() << std::endl;
+    std::cout << "Объём призмы: " << pr.Volume() << std::endl;
+
+    std::cout << "\nНажмите любую клавишу для завершения...";
     getchar();
-
-    // Конструктор без аргументов - всё по умолчанию
-    Point pDef;
-    pDef.PutX(450 + SHIFT);
-    pDef.PutY(480);
-    pDef.Show();
-
-    // Конструктор с координатами, цвет по умолчанию (серый)
-    Line lShort(500 + SHIFT, 480, 600 + SHIFT, 530);
-    lShort.Show();
-
-    // Конструктор с координатами, цвет по умолчанию
-    Triangle tShort(380 + SHIFT, 480, 460 + SHIFT, 480, 420 + SHIFT, 560);
-    tShort.Show();
-
-    // Конструктор без аргументов - призма с дефолтными значениями
-    TriPrism tpDef;
-    tpDef.Show();
-
-    std::cout << std::endl
-        << "Created: gray point, gray line, gray triangle - default colors" << std::endl
-        << "And one fully-default prism in the center of screen." << std::endl;
-
-    std::cout << std::endl
-        << "=== Geometric parameters ===" << std::endl;
-    std::cout << "Line length:    " << l.Length() << std::endl;
-    std::cout << "Triangle area:  " << t.Area() << std::endl;
-    std::cout << "Prism volume:   " << tp.Volume() << std::endl;
-
-    std::cout << std::endl << "Press ENTER to exit..." << std::endl;
-    getchar();
-
-    ReleaseDC(hwnd, hdc);
+    CloseWindow(hwnd);
     return 0;
 }

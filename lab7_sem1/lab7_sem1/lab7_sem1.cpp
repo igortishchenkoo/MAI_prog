@@ -144,15 +144,13 @@ double sinByDelta(double x, double delta, int& termsCount)
 
     termsCount = 0;
 
-    while (fabs(term) >= delta)
+    do
     {
         sum = sum + term;
         termsCount++;
-
         term = -term * x * x / ((2.0 * i) * (2.0 * i + 1.0));
-
         i++;
-    }
+    } while (fabs(term) >= delta);
 
     return sum;
 }
