@@ -55,14 +55,16 @@ void Triangle::Show()
     HPEN pen = CreatePen(PS_SOLID, 2, color);
     HPEN oldPen = (HPEN)SelectObject(hdc, pen);
 
-    const float TWO_PI_3 = 2.0f * 3.14159265f / 3.0f;
+    const float PI = 3.14159265f;
+
+    const float baseAngle = 120.0f * PI / 180.0f;
 
     short X[3], Y[3];
+    float vertAngle[3] = { fi, fi + baseAngle, fi + 2.0f * baseAngle };
     for (int i = 0; i < 3; i++)
     {
-        float angle = fi + i * TWO_PI_3;
-        X[i] = Xc + (short)(R * sin(angle));
-        Y[i] = Yc - (short)(R * cos(angle));
+        X[i] = Xc + (short)(R * sin(vertAngle[i]));
+        Y[i] = Yc - (short)(R * cos(vertAngle[i]));
     }
     MoveToEx(hdc, X[0], Y[0], NULL);
     LineTo(hdc, X[1], Y[1]);
@@ -166,7 +168,6 @@ int main()
     }
 
     ReleaseDC(hwnd, hdc);
-    CloseWindow(hwnd);
 
     return 0;
 }

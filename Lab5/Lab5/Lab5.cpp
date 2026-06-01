@@ -12,7 +12,6 @@ void DrawLine(HDC hdc, short x1, short y1, short x2, short y2) {
 
 HDC hdc = NULL;
 
-// Абстрактный класс-интерфейс (модель interface из методички)
 class ILocation {
 public:
     virtual short GetX() = 0;
@@ -33,7 +32,7 @@ public:
     short GetY() override { return Y; }
     void PutX(short x) override { X = x; }
     void PutY(short y) override { Y = y; }
-    // Show, GetC, PutC остаются чисто виртуальными (абстрактный класс)
+
     virtual void Show() = 0;
 };
 
@@ -177,11 +176,12 @@ int main() {
     Triangle* pT1 = new Triangle(400 + 350, 300, 500 + 350, 400, 450 + 350, 500, RGB(0, 128, 0));
     TriangularPrism* pPr1 = new TriangularPrism(550 + 350, 350, 650 + 350, 380, 600 + 350, 450, 70, RGB(255, 0, 255));
 
-    std::cout << "1. Вызов Show через интерфейсный указатель:\n";
-    pP1->Show(); getchar();
-    pL1->Show(); getchar();
-    pT1->Show(); getchar();
-    pPr1->Show(); getchar();
+    std::cout << "1. Show через массив указателей ILocation*:\n";
+    ILocation* shapes[5] = { pP1, pP2, pL1, pT1, pPr1 };
+    for (int i = 0; i < 5; ++i) {
+        shapes[i]->Show();
+        getchar();
+    }
 
     std::cout << "2. Работа с полиморфными функциями Clear и Move:\n";
     ILocation* pLoc;

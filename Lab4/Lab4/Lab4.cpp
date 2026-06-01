@@ -1,8 +1,3 @@
-/*
- * Лабораторная работа №4. Вариант 7: точка - отрезок - треугольник - треугольная призма.
- * Виртуальные функции. Экономия кода: Hide и MoveTo определены только в базовом классе.
- */
-
 #include <windows.h>
 #include <math.h>
 #include <iostream>
@@ -10,7 +5,6 @@
 
 const double Pi = 3.14159265358979323846;
 
-// Вспомогательная функция рисования отрезка
 void DrawLine(HDC hdc, short x1, short y1, short x2, short y2) {
     MoveToEx(hdc, x1, y1, NULL);
     LineTo(hdc, x2, y2);
@@ -18,9 +12,6 @@ void DrawLine(HDC hdc, short x1, short y1, short x2, short y2) {
 
 HDC hdc = NULL;
 
-// ------------------------------------------------------------------
-// Базовый класс Точка
-// ------------------------------------------------------------------
 class Point {
 protected:
     short X, Y;
@@ -37,7 +28,6 @@ public:
     void PutY(short y) { Y = y; }
     void PutC(size_t c) { C = c; }
 
-    // Виртуальный метод рисования
     virtual void Show() {
         HPEN pen = CreatePen(PS_SOLID, 2, C);
         SelectObject(hdc, pen);
@@ -49,11 +39,10 @@ public:
         DeleteObject(pen);
     }
 
-    // Невиртуальные методы Hide и MoveTo – вызывают виртуальный Show
     void Hide() {
         size_t oldC = C;
         C = RGB(241, 241, 241);
-        Show();                     // вызов виртуальной функции
+        Show();
         C = oldC;
     }
 
@@ -65,9 +54,6 @@ public:
     }
 };
 
-// ------------------------------------------------------------------
-// Класс Отрезок
-// ------------------------------------------------------------------
 class Line : public Point {
 protected:
     short X2, Y2;
@@ -81,7 +67,6 @@ public:
     void PutX2(short x) { X2 = x; }
     void PutY2(short y) { Y2 = y; }
 
-    // Переопределяем только Show (виртуальный)
     void Show() override {
         HPEN pen = CreatePen(PS_SOLID, 2, C);
         SelectObject(hdc, pen);
@@ -94,9 +79,6 @@ public:
     }
 };
 
-// ------------------------------------------------------------------
-// Класс Треугольник
-// ------------------------------------------------------------------
 class Triangle : public Line {
 protected:
     short X3, Y3;
@@ -136,9 +118,6 @@ public:
     }
 };
 
-// ------------------------------------------------------------------
-// Класс Треугольная призма
-// ------------------------------------------------------------------
 class TriangularPrism : public Triangle {
 protected:
     short Height;
@@ -155,12 +134,10 @@ public:
         HPEN pen = CreatePen(PS_SOLID, 2, C);
         SelectObject(hdc, pen);
 
-        // Нижнее основание
         DrawLine(hdc, X, Y, X2, Y2);
         DrawLine(hdc, X2, Y2, X3, Y3);
         DrawLine(hdc, X3, Y3, X, Y);
 
-        // Верхнее основание
         short X1t = X, Y1t = Y - Height;
         short X2t = X2, Y2t = Y2 - Height;
         short X3t = X3, Y3t = Y3 - Height;
@@ -168,7 +145,6 @@ public:
         DrawLine(hdc, X2t, Y2t, X3t, Y3t);
         DrawLine(hdc, X3t, Y3t, X1t, Y1t);
 
-        // Боковые рёбра
         DrawLine(hdc, X, Y, X1t, Y1t);
         DrawLine(hdc, X2, Y2, X2t, Y2t);
         DrawLine(hdc, X3, Y3, X3t, Y3t);
@@ -181,9 +157,6 @@ public:
     }
 };
 
-// ------------------------------------------------------------------
-// main
-// ------------------------------------------------------------------
 int main() {
     system("color f0");
     SetConsoleOutputCP(1251);
@@ -194,7 +167,6 @@ int main() {
 
     std::cout << "Лаб.раб.№4. Виртуальные функции. Вариант 7\n";
 
-    // Объекты (сдвиг X+350)
     Point pt(200 + 350, 400, RGB(255, 0, 0));
     Line ln(200 + 350, 350, 350 + 350, 400, RGB(0, 0, 255));
     Triangle tr(400 + 350, 300, 500 + 350, 400, 450 + 350, 500, RGB(0, 128, 0));
@@ -212,7 +184,6 @@ int main() {
     tr.Hide();   getchar();
     pr.Hide();   getchar();
 
-    // Восстановим
     pt.Show(); ln.Show(); tr.Show(); pr.Show(); getchar();
 
     std::cout << "3. MoveTo() – использует Hide/Show, двигает:\n";
@@ -220,6 +191,13 @@ int main() {
     ln.MoveTo(250 + 350, 380); getchar();
     tr.MoveTo(450 + 350, 350); getchar();
     pr.MoveTo(600 + 350, 400); getchar();
+
+    std::cout << "4. Виртуальный вызов через массив Point*:\n";
+    Point* figures[4] = { &pt, &ln, &tr, &pr };
+    for (int i = 0; i < 4; ++i) {
+        figures[i]->Show();
+        getchar();
+    }
 
     std::cout << "Геометрические параметры:\n";
     std::cout << "Длина отрезка: " << ln.Length() << "\n";

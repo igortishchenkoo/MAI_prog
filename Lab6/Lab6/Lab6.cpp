@@ -1,14 +1,8 @@
-/*
- * Лабораторная работа №6. Вариант 7. Композиция классов.
- * Часть 1: Точка -> Отрезок -> Треугольник (массив отрезков) -> Треугольная призма (массив треугольников).
- * Часть 2: Альтернативная композиция через отдельные объекты-вершины.
- */
-
 #include <windows.h>
 #include <math.h>
 #include <iostream>
 #include <cstdlib>
-#include <vector>   // для динамического массива
+#include <vector>
 
 const double Pi = 3.14159265358979323846;
 
@@ -19,9 +13,6 @@ void DrawLine(HDC hdc, short x1, short y1, short x2, short y2) {
 
 HDC hdc = NULL;
 
-// ========== Часть 1: Композиция с массивами ==========
-
-// Простейшая точка (для композиции)
 class Point {
 public:
     short X, Y;
@@ -39,7 +30,6 @@ public:
     }
 };
 
-// Отрезок, содержит два объекта Point
 class Line {
 public:
     Point p1, p2;
@@ -55,22 +45,21 @@ public:
     }
 };
 
-// Треугольник, состоящий из массива отрезков (заполняющих треугольник)
 class Triangle {
 public:
-    std::vector<Line> lines;   // композиция: множество отрезков
+    std::vector<Line> lines;
     COLORREF color;
-    // Конструктор по трём точкам: основание и вершина
+
     Triangle(Point bottomLeft, Point bottomRight, Point top,
         COLORREF c = RGB(0, 128, 0))
         : color(c) {
-        // Определяем границы Y: от верхней точки до основания
+
         short yMin = top.Y;
-        short yMax = bottomLeft.Y; // предполагаем, что основание ниже
+        short yMax = bottomLeft.Y;
         if (yMin > yMax) std::swap(yMin, yMax);
-        // Для каждого Y-уровня вычисляем левую и правую границу треугольника
+
         for (short y = yMin; y <= yMax; ++y) {
-            // Параметрическое уравнение: левая сторона top->bottomLeft, правая top->bottomRight
+
             auto interpolate = [](Point a, Point b, short y) -> short {
                 if (a.Y == b.Y) return a.X;
                 return a.X + (b.X - a.X) * (y - a.Y) / (b.Y - a.Y);
@@ -84,35 +73,33 @@ public:
     void Show() const {
         for (const auto& l : lines) l.Show();
     }
-    // Возвращает левую нижнюю точку основания
+
     Point GetBasePoint() const {
-        // первая линия в массиве – самый верх, последняя – основание
-        return lines.back().p1; // p1 левого конца нижнего отрезка
+
+        return lines.back().p1;
     }
 };
 
-// Треугольная призма (в виде пирамиды с убывающими треугольниками)
 class TriangularPrism {
 public:
-    std::vector<Triangle> levels;  // массив треугольников от большого (основание) до малого (вершина)
+    std::vector<Triangle> levels;
     COLORREF color;
-    // Конструктор: основание (три точки), высота (количество уровней), вершина (точка или нуль)
+
     TriangularPrism(Point base1, Point base2, Point base3,
         short heightLevels, COLORREF c = RGB(255, 0, 255))
         : color(c) {
-        // Предполагаем, что base1, base2, base3 – нижнее основание (Y одинаковый или почти)
-        // Вершина верхнего уровня – верхняя точка (центр)
-        Point top((base1.X + base2.X + base3.X) / 3, base1.Y - heightLevels * 10, c); // условно
-        // Генерируем levels треугольников, интерполируя вершины между основанием и top
+
+        Point top((base1.X + base2.X + base3.X) / 3, base1.Y - heightLevels * 10, c);
+
         for (short i = 0; i <= heightLevels; ++i) {
-            float t = float(i) / heightLevels; // 0 = основание, 1 = вершина
+            float t = float(i) / heightLevels;
             auto interp = [](Point a, Point b, float t) -> Point {
                 return Point(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t, a.C);
                 };
             Point b1 = interp(base1, top, t);
             Point b2 = interp(base2, top, t);
             Point b3 = interp(base3, top, t);
-            // Создаём треугольник уровня как массив отрезков (используем Triangle)
+
             levels.push_back(Triangle(b1, b2, b3, c));
         }
     }
@@ -120,17 +107,25 @@ public:
         for (const auto& tri : levels) tri.Show();
     }
     Point GetBasePoint() const {
-        return levels.front().GetBasePoint(); // от основания (первый уровень – самый большой)
+        return levels.front().GetBasePoint();
     }
 };
 
-// ========== Часть 2: Альтернативная композиция (объекты-вершины) ==========
 class Point2 {
 public:
     short X, Y;
     COLORREF C;
     Point2(short x = 0, short y = 0, COLORREF c = RGB(0, 0, 0)) : X(x), Y(y), C(c) {}
-    void Show() const { /* аналогично */ }
+    void Show() const {
+        HPEN pen = CreatePen(PS_SOLID, 2, C);
+        SelectObject(hdc, pen);
+        short R = 2, Ri;
+        for (char i = -1; i < 2; ++i) {
+            Ri = R * i;
+            Arc(hdc, X - Ri, Y - Ri, X + Ri, Y + Ri, X, Y + Ri, X, Y + Ri);
+        }
+        DeleteObject(pen);
+    }
 };
 
 class Line2 {
@@ -150,7 +145,7 @@ public:
 
 class Triangle2 {
 public:
-    Point2 v1, v2, v3;  // три вершины
+    Point2 v1, v2, v3;
     COLORREF color;
     Triangle2(Point2 a, Point2 b, Point2 c, COLORREF col = RGB(0, 128, 0))
         : v1(a), v2(b), v3(c), color(col) {
@@ -167,7 +162,7 @@ public:
 
 class TriangularPrism2 {
 public:
-    Triangle2 bottom, top;   // два основания
+    Triangle2 bottom, top;
     short height;
     COLORREF color;
     TriangularPrism2(Triangle2 bot, Triangle2 tp, short h, COLORREF c = RGB(255, 0, 255))
@@ -176,7 +171,7 @@ public:
     void Show() const {
         bottom.Show();
         top.Show();
-        // соединяем соответствующие вершины
+
         HPEN pen = CreatePen(PS_SOLID, 2, color);
         SelectObject(hdc, pen);
         DrawLine(hdc, bottom.v1.X, bottom.v1.Y, top.v1.X, top.v1.Y);
@@ -186,7 +181,6 @@ public:
     }
 };
 
-// ========== main ==========
 int main() {
     system("color f0");
     SetConsoleOutputCP(1251);
@@ -198,7 +192,6 @@ int main() {
     std::cout << "Лаб.раб.№6. Композиция. Вариант 7.\n";
     std::cout << "Часть 1: Треугольник из отрезков, призма-пирамида.\n";
 
-    // Основание треугольника
     Point p1(150, 500, RGB(255, 0, 0));
     Point p2(450, 500, RGB(255, 0, 0));
     Point top(300, 200, RGB(0, 255, 0));
@@ -206,11 +199,9 @@ int main() {
     Triangle tri(p1, p2, top, RGB(0, 128, 0));
     tri.Show(); getchar();
 
-    // Призма (пирамида) с убывающими треугольниками
     TriangularPrism prism(p1, p2, top, 15, RGB(255, 0, 255));
     prism.Show(); getchar();
 
-    // Вывод координат точки основания
     Point basePt = prism.GetBasePoint();
     std::cout << "Координаты точки основания (левая нижняя): "
         << "X = " << basePt.X << ", Y = " << basePt.Y << "\n";
