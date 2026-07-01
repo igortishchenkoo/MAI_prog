@@ -1,6 +1,15 @@
 ﻿#include <iostream>
 #include <string>
-#include <windows.h>	
+#include <windows.h>
+#include <random>
+#include <vector>
+
+std::mt19937 rng(std::random_device{}());
+
+int rollDamage(int minDmg, int maxDmg) {
+	std::uniform_int_distribution<int> dist(minDmg, maxDmg);
+	return dist(rng);
+}
 
 enum class  Armor { Heavy, Medium, Light };
 
@@ -11,6 +20,30 @@ std::string armorToString(Armor a) {
 	case Armor::Light: return "лёгкая";
 	}
 	return "неизвестно";
+}
+
+struct Attack {
+	std::string name;
+	int minDmg;
+	int maxDmg;
+	double vsHeavy;
+	double vsMedium;
+	double vsLight;
+
+	double multiplierVS(Armor targetArmor) const {
+		switch (targetArmor) {
+		case Armor::Heavy: return vsHeavy;
+		case Armor::Medium: return vsMedium;
+		case Armor::Light: return vsLight;
+		}
+		return 1.0;
+	}
+};
+
+int computeDamage(Attack atk, Armor targetArmor) {
+	int rolled = rollDamage(atk.minDmg, atk.maxDmg);   
+	double mult = atk.multiplierVS(targetArmor);         
+	return static_cast<int>(rolled * mult);               
 }
 
 class Character {
@@ -34,6 +67,12 @@ public:
 	virtual ~Character() = default;
 
 	virtual std::string getClassName() const { return "Боец"; }
+
+	void attackTarget(Character& target, Attack atk) {
+		int dmg = computeDamage(atk, target.armor);
+		target.takeDamage(dmg);
+		std::cout << getClassName() << " бьёт " << atk.name << " на " << dmg << "\n";
+	}
 
 protected:
 	std::string name;
@@ -60,13 +99,12 @@ int main() {
 	SetConsoleOutputCP(1251);
 	SetConsoleCP(1251);
 
-	Warrior a("Alex", 120, Armor::Heavy);
-	Mage b("Merlin", 80, Armor::Light);
+	Warrior a("Александр", 120, Armor::Heavy);
+	Mage b("Мерлин", 80, Armor::Light);
 
-	std::cout << a.getClassName() << " ";
-	a.print();
-	std::cout << b.getClassName() << " ";
+	Attack strike{ "Удар", 5, 15, 0.8, 1.0, 1.2 };
+
 	b.print();
-
-	std::cout << a.isAlive() << "\n";
+	a.attackTarget(b, strike);
+	b.print();
 }
