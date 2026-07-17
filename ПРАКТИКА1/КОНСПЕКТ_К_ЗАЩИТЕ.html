@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Конспект к защите — текстовый файтинг на C++</title>
+<style>
+  :root{
+    --ink:#2c2a26; --mut:#6b675f; --bg:#faf8f4; --card:#ffffff; --line:#e5e0d6;
+    --teal:#0F6E56; --teal-bg:#E1F5EE;
+    --purp:#534AB7; --purp-bg:#EEEDFE;
+    --amber:#854F0B; --amber-bg:#FAEEDA;
+    --red:#A32D2D; --red-bg:#FCEBEB;
+    --blue:#185FA5; --blue-bg:#E6F1FB;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:32px 18px;background:var(--bg);color:var(--ink);
+       font:16px/1.65 Georgia,'Times New Roman',serif}
+  .wrap{max-width:880px;margin:0 auto}
+  h1{font-size:30px;line-height:1.25;margin:0 0 4px}
+  h2{font-size:22px;margin:44px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--line)}
+  h3{font-size:17px;margin:26px 0 6px}
+  .sub{color:var(--mut);margin:0 0 18px}
+  .num{display:inline-block;background:var(--ink);color:#fff;border-radius:6px;
+       padding:0 9px;margin-right:8px;font-family:Consolas,monospace;font-size:15px}
+  code,pre{font-family:Consolas,'Courier New',monospace;font-size:14px}
+  code{background:#f0ede6;border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  pre{background:#26241f;color:#e8e4da;padding:14px 16px;border-radius:10px;
+      overflow-x:auto;line-height:1.5}
+  pre code{background:none;border:none;color:inherit;padding:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+        padding:18px 20px;margin:14px 0}
+  .simple,.smart,.where,.trap{border-radius:10px;padding:10px 14px;margin:10px 0}
+  .simple{background:var(--teal-bg)} .simple b{color:var(--teal)}
+  .smart{background:var(--purp-bg)} .smart b{color:var(--purp)}
+  .where{background:var(--blue-bg);font-size:14.5px} .where b{color:var(--blue)}
+  .trap{background:var(--amber-bg)} .trap b{color:var(--amber)}
+  .danger{background:var(--red-bg);border-radius:10px;padding:10px 14px;margin:10px 0}
+  .danger b{color:var(--red)}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:15px;background:#fff}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:#f0ede6}
+  .qa{margin:14px 0;padding:14px 16px;background:#fff;border:1px solid var(--line);
+      border-left:4px solid var(--purp);border-radius:0 10px 10px 0}
+  .qa .q{font-weight:bold}
+  .qa .a{margin-top:6px}
+  svg{display:block;margin:16px auto;max-width:100%}
+  .svgcap{color:var(--mut);font-size:14px;text-align:center;margin-top:-8px}
+  @media print{ body{background:#fff;padding:0} .card,.qa{break-inside:avoid} }
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>Текстовый файтинг на C++ — конспект к защите</h1>
+<p class="sub">Проект: пошаговый консольный файтинг «Воин против Мага». Один файл <code>main.cpp</code>, C++17, Visual Studio.
+Здесь — всё, что есть в коде: каждое понятие с определением, для сложного — пояснение «просто» и «умно», где оно в коде, и вопросы-ловушки в конце.</p>
+
+<!-- ================= КАРТА КОДА ================= -->
+<h2><span class="num">1</span>Что вообще в программе</h2>
+
+<div class="card">
+<p><b>Игра:</b> два игрока (хотсит) выбирают класс (Воин / Маг) и броню, потом по очереди бьют друг друга атаками, пока у кого-то не кончится здоровье. Урон случайный, зависит от матрицы «атака × броня цели», часть урона срезает резист брони, можно увернуться. У воина ресурс — ярость (копится в бою, тратится на ульту), у мага — мана (тратится на заклинания, восстанавливается каждый ход).</p>
+</div>
+
+<svg viewBox="0 0 840 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Архитектура программы">
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#6b675f" stroke-width="1.5"/></marker></defs>
+  <!-- main -->
+  <rect x="330" y="18" width="180" height="52" rx="8" fill="#EEEDFE" stroke="#534AB7"/>
+  <text x="420" y="40" text-anchor="middle" font-family="Consolas" font-size="15" fill="#26215C">main()</text>
+  <text x="420" y="58" text-anchor="middle" font-family="Georgia" font-size="12" fill="#534AB7">создаёт бойцов, запускает бой</text>
+  <!-- createFighter / runBattle -->
+  <rect x="120" y="110" width="200" height="52" rx="8" fill="#E6F1FB" stroke="#185FA5"/>
+  <text x="220" y="132" text-anchor="middle" font-family="Consolas" font-size="14" fill="#042C53">createFighter()</text>
+  <text x="220" y="150" text-anchor="middle" font-family="Georgia" font-size="12" fill="#185FA5">фабрика: меню → new Warrior/Mage</text>
+  <rect x="520" y="110" width="200" height="52" rx="8" fill="#E6F1FB" stroke="#185FA5"/>
+  <text x="620" y="132" text-anchor="middle" font-family="Consolas" font-size="14" fill="#042C53">runBattle(p1, p2)</text>
+  <text x="620" y="150" text-anchor="middle" font-family="Georgia" font-size="12" fill="#185FA5">цикл боя до победы</text>
+  <line x1="380" y1="70" x2="240" y2="108" stroke="#6b675f" stroke-width="1.2" marker-end="url(#ar)"/>
+  <line x1="460" y1="70" x2="600" y2="108" stroke="#6b675f" stroke-width="1.2" marker-end="url(#ar)"/>
+  <!-- Character -->
+  <rect x="300" y="200" width="240" height="74" rx="8" fill="#E1F5EE" stroke="#0F6E56"/>
+  <text x="420" y="222" text-anchor="middle" font-family="Consolas" font-size="15" fill="#04342C">class Character</text>
+  <text x="420" y="240" text-anchor="middle" font-family="Georgia" font-size="12" fill="#0F6E56">имя, HP, броня, атаки</text>
+  <text x="420" y="258" text-anchor="middle" font-family="Georgia" font-size="12" fill="#0F6E56">virtual-методы + хуки</text>
+  <line x1="270" y1="162" x2="360" y2="198" stroke="#6b675f" stroke-width="1.2" marker-end="url(#ar)"/>
+  <line x1="590" y1="162" x2="480" y2="198" stroke="#6b675f" stroke-width="1.2" marker-end="url(#ar)"/>
+  <!-- Warrior / Mage -->
+  <rect x="150" y="320" width="200" height="56" rx="8" fill="#E1F5EE" stroke="#0F6E56"/>
+  <text x="250" y="342" text-anchor="middle" font-family="Consolas" font-size="14" fill="#04342C">class Warrior</text>
+  <text x="250" y="360" text-anchor="middle" font-family="Georgia" font-size="12" fill="#0F6E56">ярость: копится → ульта</text>
+  <rect x="490" y="320" width="200" height="56" rx="8" fill="#E1F5EE" stroke="#0F6E56"/>
+  <text x="590" y="342" text-anchor="middle" font-family="Consolas" font-size="14" fill="#04342C">class Mage</text>
+  <text x="590" y="360" text-anchor="middle" font-family="Georgia" font-size="12" fill="#0F6E56">мана: тратится + реген</text>
+  <line x1="250" y1="318" x2="360" y2="276" stroke="#0F6E56" stroke-width="1.4" marker-end="url(#ar)"/>
+  <line x1="590" y1="318" x2="480" y2="276" stroke="#0F6E56" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="255" y="296" font-family="Georgia" font-size="12" fill="#0F6E56">наследует</text>
+  <text x="530" y="296" font-family="Georgia" font-size="12" fill="#0F6E56">наследует</text>
+  <!-- data -->
+  <rect x="40" y="200" width="200" height="74" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-dasharray="5 4"/>
+  <text x="140" y="222" text-anchor="middle" font-family="Consolas" font-size="14" fill="#412402">данные</text>
+  <text x="140" y="240" text-anchor="middle" font-family="Georgia" font-size="12" fill="#854F0B">struct Attack · enum Armor</text>
+  <text x="140" y="258" text-anchor="middle" font-family="Georgia" font-size="12" fill="#854F0B">матрица, резист, уворот</text>
+  <!-- utils -->
+  <rect x="600" y="200" width="200" height="74" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-dasharray="5 4"/>
+  <text x="700" y="222" text-anchor="middle" font-family="Consolas" font-size="14" fill="#412402">утилиты</text>
+  <text x="700" y="240" text-anchor="middle" font-family="Georgia" font-size="12" fill="#854F0B">rng, rollDamage, tryRoll</text>
+  <text x="700" y="258" text-anchor="middle" font-family="Georgia" font-size="12" fill="#854F0B">readInt, healthBar, drawBoard</text>
+</svg>
+<p class="svgcap">Карта программы: main → фабрика и бой; иерархия классов; пассивные данные и утилиты.</p>
+
+<!-- ================= ООП ================= -->
+<h2><span class="num">2</span>ООП: главные понятия</h2>
+
+<h3>Класс и объект</h3>
+<div class="card">
+<p><b>Определение.</b> Класс — пользовательский тип данных, объединяющий данные (поля) и функции для работы с ними (методы). Объект — конкретный экземпляр класса в памяти.</p>
+<div class="simple"><b>Просто:</b> класс — чертёж дома, объект — построенный дом. По одному чертежу можно построить сколько угодно домов, у каждого свой адрес и своя мебель.</div>
+<div class="where"><b>Где в коде:</b> класс <code>Character</code>; объекты — то, что создаётся в <code>createFighter()</code> через <code>new Warrior(...)</code>.</div>
+</div>
+
+<h3>Инкапсуляция (public / protected / private)</h3>
+<div class="card">
+<p><b>Определение.</b> Сокрытие внутреннего состояния объекта: данные закрыты, доступ к ним — только через публичные методы. Модификаторы: <code>public</code> — видно всем; <code>protected</code> — видно классу и его наследникам; <code>private</code> — видно только самому классу.</p>
+<div class="simple"><b>Просто:</b> банкомат. Деньги внутри (private), но снаружи есть кнопки (public-методы). Ты не можешь залезть рукой в сейф и «поправить» сумму — только через операции, которые проверяют правила.</div>
+<div class="smart"><b>Умно:</b> инкапсуляция защищает <i>инварианты</i> класса — условия, которые всегда должны выполняться. Например, «HP не бывает меньше 0» гарантируется тем, что менять health можно только через <code>takeDamage()</code>, где стоит проверка. Если бы поле было public, любой код мог бы записать туда −50 и сломать логику.</div>
+<div class="where"><b>Где в коде:</b> поля <code>health, armor, attacks</code> лежат в <code>protected</code> (не private — чтобы наследники Warrior/Mage могли их видеть), а снаружи доступ только через методы.</div>
+</div>
+
+<h3>Конструктор и список инициализации</h3>
+<div class="card">
+<p><b>Определение.</b> Конструктор — специальный метод, вызываемый при создании объекта; имя совпадает с именем класса, возвращаемого типа нет. Список инициализации — конструкция <code>: поле(значение), ...</code> после заголовка конструктора, инициализирующая поля до входа в тело.</p>
+<pre><code>Character(std::string name, int health, Armor armor)
+    : name(name), health(health), maxHealth(health), armor(armor) {}</code></pre>
+<div class="simple"><b>Просто:</b> это анкета при рождении объекта: имя, здоровье, броня записываются сразу, а не «родился пустым, потом заполним».</div>
+<div class="smart"><b>Умно:</b> поля инициализируются <b>в порядке их объявления в классе</b>, а не в порядке записи в списке. Поэтому список надо писать в том же порядке, что и объявления, иначе при <code>/W4</code> будет предупреждение, а в хитрых случаях (одно поле зависит от другого) — баг. Заметь трюк <code>maxHealth(health)</code>: максимум задаётся от стартового здоровья, второй параметр не нужен.</div>
+<div class="trap"><b>Тонкость:</b> конструктор наследника обязан вызвать конструктор базы: <code>Warrior(...) : Character(name, health, armor) {...}</code> — данные «передаются вверх». Без этого база не соберётся.</div>
+</div>
+
+<h3>Наследование</h3>
+<div class="card">
+<p><b>Определение.</b> Механизм создания нового класса на основе существующего: наследник получает все поля и методы базового класса и может добавлять свои или переопределять виртуальные. Запись: <code>class Warrior : public Character</code>. Публичное наследование выражает отношение «is-a»: воин <i>есть</i> персонаж.</p>
+<div class="simple"><b>Просто:</b> «воин — это персонаж со своими особенностями». Всё общее (HP, броня, умение получать урон) написано один раз в Character, а Warrior и Mage добавляют только своё: ярость и ману.</div>
+<div class="smart"><b>Умно:</b> наследование — инструмент устранения дублирования и построения полиморфных иерархий. Альтернатива — композиция («has-a»); правило хорошего тона: наследование только там, где реально «is-a» и нужен полиморфизм, иначе — композиция. У нас ровно этот случай: бой работает с «каким-то Character», не зная каким.</div>
+<div class="where"><b>Где в коде:</b> <code>class Warrior : public Character</code>, <code>class Mage : public Character</code>.</div>
+</div>
+
+<h3>Полиморфизм, virtual и override</h3>
+<div class="card">
+<p><b>Определение.</b> Полиморфизм — возможность работать с объектами разных классов через единый интерфейс базового класса, при этом вызывается версия метода <i>реального</i> класса объекта. Включается словом <code>virtual</code> в базе; наследник помечает свою версию <code>override</code>.</p>
+<pre><code>virtual std::string getClassName() const { return "Боец"; }   // база
+std::string getClassName() const override { return "Воин"; }  // Warrior</code></pre>
+<div class="simple"><b>Просто:</b> кнопка «подай голос» у животных: жмёшь её у собаки — «гав», у кота — «мяу». Код, который жмёт кнопку, один и тот же, а результат зависит от того, кто перед тобой.</div>
+<div class="smart"><b>Умно:</b> это <i>динамический</i> полиморфизм: решение, какую функцию звать, принимается во время выполнения через таблицу виртуальных функций (vtable). У каждого полиморфного объекта есть скрытый указатель (vptr) на vtable его класса; вызов <code>p->getClassName()</code> идёт через эту таблицу. Поэтому <code>Character* p = new Warrior(...)</code> честно отвечает «Воин». <code>override</code> — страховка компилятора: если опечатался в сигнатуре, получишь ошибку, а не тихо созданный новый метод.</div>
+<div class="where"><b>Где в коде:</b> <code>getClassName, showResource, canAfford, payFor, onDealDamage, onTakeDamage, onTurnStart</code> — все виртуальные; <code>runBattle</code> и <code>attackTarget</code> работают с <code>Character&amp;</code>, не зная, воин там или маг.</div>
+</div>
+
+<h3>Виртуальный деструктор</h3>
+<div class="card">
+<p><b>Определение.</b> Деструктор — метод, вызываемый при уничтожении объекта (<code>~Character()</code>). Если класс используется полиморфно (удаляется через указатель на базу), деструктор обязан быть виртуальным.</p>
+<pre><code>virtual ~Character() = default;</code></pre>
+<div class="simple"><b>Просто:</b> ты сдаёшь номер в отеле по карточке «постоялец» (указатель на базу). Если деструктор не виртуальный, уборка пройдёт только по общему списку, а личные вещи конкретного гостя (данные наследника) останутся гнить.</div>
+<div class="smart"><b>Умно:</b> <code>delete p1</code>, где <code>p1</code> имеет тип <code>Character*</code>, а объект на самом деле <code>Warrior</code> — при невиртуальном деструкторе это <b>неопределённое поведение</b> (UB): вызовется только деструктор базы. С <code>virtual</code> вызов уходит через vtable в правильный деструктор наследника, потом автоматически в базовый. Правило: есть хоть один virtual-метод — делай и деструктор виртуальным. <code>= default</code> означает «сгенерируй стандартный».</div>
+<div class="where"><b>Где в коде:</b> в <code>Character</code>; критично, потому что в <code>main</code> есть <code>delete p1; delete p2;</code> по указателям <code>Character*</code>.</div>
+</div>
+
+<h3>struct против class</h3>
+<div class="card">
+<p><b>Определение.</b> В C++ <code>struct</code> и <code>class</code> — одно и то же, кроме доступа по умолчанию: в struct всё public, в class всё private. По соглашению struct используют для простых «пакетов данных», class — когда есть инкапсуляция и поведение.</p>
+<div class="where"><b>Где в коде:</b> <code>struct Attack</code> — чистые данные атаки (имя, урон, множители, стоимость) с одним вспомогательным методом <code>multiplierVS</code>; <code>class Character</code> — полноценный класс с закрытым состоянием.</div>
+</div>
+
+<h3>enum class (перечисление)</h3>
+<div class="card">
+<p><b>Определение.</b> <code>enum class</code> — типобезопасное перечисление: свой тип с фиксированным набором именованных значений, требует префикс (<code>Armor::Heavy</code>) и не преобразуется неявно в int.</p>
+<pre><code>enum class Armor { Heavy, Medium, Light };</code></pre>
+<div class="simple"><b>Просто:</b> вместо загадочного «броня = 1» (что это? тяжёлая? средняя?) код говорит словами: <code>Armor::Heavy</code>. Опечататься или передать «броню = 47» невозможно — компилятор не пустит.</div>
+<div class="smart"><b>Умно:</b> старый <code>enum</code> (без class) сливает имена в общую область видимости и неявно кастуется в int — источник конфликтов и багов. <code>enum class</code> «огорожен»: имена внутри, преобразование только явное. Поэтому для печати нужна функция-переводчик <code>armorToString</code> со <code>switch</code>.</div>
+<div class="where"><b>Где в коде:</b> <code>Armor</code>; по нему работают <code>armorToString, dodgeChance, damageResist, multiplierVS</code>.</div>
+</div>
+
+<h3>const-корректность</h3>
+<div class="card">
+<p><b>Определение.</b> Метод с <code>const</code> после скобок (<code>bool isAlive() const</code>) обещает не менять объект; компилятор это проверяет. Параметр <code>const T&amp;</code> — «передай без копии, но менять не буду».</p>
+<div class="simple"><b>Просто:</b> табличка «руками не трогать». <code>isAlive()</code> только смотрит на здоровье — пусть компилятор гарантирует, что оно случайно не изменится.</div>
+<div class="smart"><b>Умно:</b> const — часть контракта интерфейса: const-методы можно звать у const-объектов и по const-ссылкам (как в <code>drawBoard(const Character&amp; p1, ...)</code>). Убери const у <code>print()</code> — и drawBoard перестанет компилироваться. Ещё нюанс: <code>payFor</code> в базе объявлен <b>без</b> const (он меняет ресурс) — значит и переопределения в наследниках должны быть без const, иначе это не override, а другой метод.</div>
+<div class="where"><b>Где в коде:</b> <code>isAlive, print, getClassName, showResource, canAfford, listAttacks, showAttacks, askAttackIndex, multiplierVS</code> — const; <code>takeDamage, payFor, useAttack</code> — нет, они меняют состояние.</div>
+</div>
+
+<h3>Хуки (виртуальные точки расширения)</h3>
+<div class="card">
+<p><b>Определение.</b> Приём: базовый класс в нужных местах алгоритма зовёт виртуальные методы с пустой реализацией по умолчанию; наследники переопределяют только нужные. Родственник паттерна «Шаблонный метод».</p>
+<pre><code>virtual void onDealDamage(int dmg) {}   // база: ничего
+void onDealDamage(int dmg) override { addRage(5); }  // Warrior: +ярость</code></pre>
+<div class="simple"><b>Просто:</b> в сценарии боя оставлены «розетки»: momento удара, момент получения урона, начало хода. Воин втыкает в них ярость, маг — реген маны. Кому не надо — оставляет пустыми.</div>
+<div class="smart"><b>Умно:</b> так общий алгоритм (<code>attackTarget</code>, <code>takeDamage</code>, цикл хода) написан один раз и не знает про классы, а специфика классов «подписывается на события». Это удобнее, чем if-ы вида «если воин — добавь ярость»: добавление третьего класса не требует менять движок. Пары <code>canAfford/payFor</code> — те же хуки для экономики ресурсов: у мага мана, у воина ярость, база по умолчанию «всё бесплатно».</div>
+<div class="where"><b>Где в коде:</b> <code>onDealDamage, onTakeDamage, onTurnStart, canAfford, payFor</code>; дергаются из <code>attackTarget, takeDamage, runBattle, useAttack, askAttackIndex</code>.</div>
+</div>
+
+<!-- ================= ПАМЯТЬ ================= -->
+<h2><span class="num">3</span>Память: указатели, ссылки, new/delete</h2>
+
+<svg viewBox="0 0 840 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Стек и куча">
+  <defs><marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#185FA5" stroke-width="1.5"/></marker></defs>
+  <rect x="60" y="40" width="280" height="160" rx="10" fill="#fff" stroke="#e5e0d6"/>
+  <text x="200" y="66" text-anchor="middle" font-family="Georgia" font-size="15" fill="#6b675f">СТЕК (внутри main)</text>
+  <rect x="90" y="86" width="220" height="44" rx="6" fill="#E6F1FB" stroke="#185FA5"/>
+  <text x="200" y="104" text-anchor="middle" font-family="Consolas" font-size="14" fill="#042C53">Character* p1</text>
+  <text x="200" y="122" text-anchor="middle" font-family="Georgia" font-size="12" fill="#185FA5">хранит адрес, 8 байт</text>
+  <rect x="500" y="40" width="280" height="160" rx="10" fill="#fff" stroke="#e5e0d6"/>
+  <text x="640" y="66" text-anchor="middle" font-family="Georgia" font-size="15" fill="#6b675f">КУЧА (new)</text>
+  <rect x="530" y="86" width="220" height="84" rx="6" fill="#E1F5EE" stroke="#0F6E56"/>
+  <text x="640" y="108" text-anchor="middle" font-family="Consolas" font-size="14" fill="#04342C">объект Warrior</text>
+  <text x="640" y="128" text-anchor="middle" font-family="Georgia" font-size="12" fill="#0F6E56">name, health, armor,</text>
+  <text x="640" y="146" text-anchor="middle" font-family="Georgia" font-size="12" fill="#0F6E56">attacks, rage, vptr</text>
+  <line x1="310" y1="108" x2="526" y2="120" stroke="#185FA5" stroke-width="1.6" marker-end="url(#ar2)"/>
+  <text x="418" y="98" text-anchor="middle" font-family="Georgia" font-size="13" fill="#185FA5">указывает на</text>
+  <text x="420" y="228" text-anchor="middle" font-family="Georgia" font-size="13" fill="#6b675f">delete p1 — освобождает объект в куче; сам указатель умирает с функцией</text>
+</svg>
+
+<h3>Указатели, new и delete</h3>
+<div class="card">
+<p><b>Определение.</b> Указатель (<code>Character*</code>) — переменная, хранящая адрес объекта. <code>new</code> создаёт объект в динамической памяти (куче) и возвращает адрес; <code>delete</code> уничтожает объект и освобождает память. <code>*p</code> — разыменование, доступ к самому объекту.</p>
+<div class="simple"><b>Просто:</b> указатель — бумажка с адресом дома, а не сам дом. <code>new</code> строит дом и даёт адрес, <code>delete</code> — сносит по адресу. Потерял бумажку, не снеся дом, — дом остался стоять и занимать место (утечка памяти).</div>
+<div class="smart"><b>Умно:</b> указатель на базу нужен нам ради полиморфизма: тип создаваемого бойца известен только в рантайме (игрок выбирает в меню), а <code>Character* p</code> может держать любого наследника. Каждому <code>new</code> — ровно один <code>delete</code>, иначе утечка. В современном C++ это автоматизируют умные указатели (<code>std::unique_ptr</code> сам зовёт delete) — честный ответ на вопрос «как сделали бы в продакшене».</div>
+<div class="where"><b>Где в коде:</b> <code>createFighter()</code> возвращает <code>Character*</code> из <code>new Warrior/new Mage</code>; в <code>main</code> — <code>runBattle(*p1, *p2)</code> и парные <code>delete</code>.</div>
+</div>
+
+<h3>Ссылки (&amp;) и передача параметров</h3>
+<div class="card">
+<p><b>Определение.</b> Ссылка (<code>Character&amp;</code>) — псевдоним существующего объекта. Передача по значению копирует объект; по ссылке — работаем с оригиналом; по const-ссылке — без копии и без права менять.</p>
+<div class="simple"><b>Просто:</b> передать по значению — дать ксерокопию тетради: что в ней ни черкай, оригинал чист. По ссылке — дать саму тетрадь. Когда воин бьёт мага, урон должен получить настоящий маг, а не его ксерокопия — поэтому цель передаётся как <code>Character&amp; target</code>.</div>
+<div class="smart"><b>Умно:</b> ссылка обязана быть привязана при создании и не бывает «нулевой» — этим она безопаснее указателя. Правило выбора: менять объект → <code>T&amp;</code>; только читать, объект тяжёлый → <code>const T&amp;</code> (без копирования); мелкие типы (int, enum) — по значению. Передача по значению полиморфного объекта опасна ещё и срезкой (см. ловушки).</div>
+<div class="where"><b>Где в коде:</b> <code>attackTarget(Character&amp; target, ...)</code>, <code>runBattle(Character&amp; p1, Character&amp; p2)</code>, <code>drawBoard(const Character&amp;, const Character&amp;)</code>, range-for <code>const Attack&amp; atk</code>.</div>
+</div>
+
+<!-- ================= STL ================= -->
+<h2><span class="num">4</span>Стандартная библиотека</h2>
+
+<h3>std::vector и range-for</h3>
+<div class="card">
+<p><b>Определение.</b> <code>std::vector&lt;T&gt;</code> — динамический массив: хранит элементы одного типа, сам управляет памятью и размером. <code>push_back</code> добавляет в конец, <code>size()</code> — количество, <code>v[i]</code> — доступ по индексу (без проверки границ!). Range-for (<code>for (const Attack&amp; a : attacks)</code>) — обход всех элементов по очереди.</p>
+<div class="simple"><b>Просто:</b> резиновый список: кинул четвёртую атаку — сам растянулся. А range-for читается как «для каждой атаки из списка».</div>
+<div class="smart"><b>Умно:</b> <code>v[i]</code> с плохим индексом — неопределённое поведение (выход за границы), поэтому весь пользовательский ввод индексов у нас зажат через <code>readInt(1, size) − 1</code>. <code>size()</code> возвращает беззнаковый <code>size_t</code> — при сравнении с int нужен <code>static_cast&lt;int&gt;</code>, иначе предупреждение о сравнении знакового с беззнаковым. В range-for берём элемент по <code>const&amp;</code>, чтобы не копировать структуру на каждой итерации.</div>
+<div class="where"><b>Где в коде:</b> <code>std::vector&lt;Attack&gt; attacks</code>; заполняется списком в фигурных скобках в конструкторах Warrior/Mage; обходится в <code>showAttacks/listAttacks</code>.</div>
+</div>
+
+<h3>Случайные числа: &lt;random&gt;</h3>
+<div class="card">
+<p><b>Определение.</b> Современная случайность в C++ = движок + распределение. <code>std::mt19937</code> — генератор (Mersenne Twister), засевается один раз из <code>std::random_device</code>; <code>std::uniform_int_distribution&lt;int&gt;(a, b)</code> — равномерно раскладывает вывод движка в диапазон [a; b] включительно.</p>
+<pre><code>std::mt19937 rng(std::random_device{}());
+int rollDamage(int minDmg, int maxDmg) {
+    std::uniform_int_distribution&lt;int&gt; dist(minDmg, maxDmg);
+    return dist(rng);
+}</code></pre>
+<div class="simple"><b>Просто:</b> движок — барабан лототрона, который крутится и выдаёт сырые числа; распределение — трафарет, который превращает их в честные «от 5 до 15». А зерно из random_device — то, что каждый запуск игры делает разным.</div>
+<div class="smart"><b>Умно:</b> почему не <code>rand() % 11 + 5</code>: у rand слабый генератор и, главное, взятие остатка даёт <i>перекос</i> (modulo bias) — младшие значения выпадают чаще, если диапазон rand не делится нацело. Движок глобальный и один, потому что он хранит состояние: пересоздавать его на каждый бросок — значит пересевать и убивать статистику. Запись <code>std::random_device{}()</code> — создали временный объект и сразу вызвали его <code>operator()</code>, получив одно зерно. Шанс события: <code>tryRoll(p)</code> — бросок 1..100 и сравнение <code>&lt;= p</code>.</div>
+</div>
+
+<h3>Строки, потоки и защита ввода</h3>
+<div class="card">
+<p><b>Определение.</b> <code>std::getline(std::cin, line)</code> читает всю строку в <code>std::string</code>. <code>std::stringstream</code> — поток над строкой в памяти: из него можно читать так же, как из cin. На этом построен защищённый ввод:</p>
+<pre><code>int readInt(int minVal, int maxVal) {
+    while (true) {
+        std::string line;
+        if (!std::getline(std::cin, line)) std::exit(0);
+        std::stringstream ss(line);
+        int value; std::string extra;
+        if (ss &gt;&gt; value &amp;&amp; !(ss &gt;&gt; extra) &amp;&amp; value &gt;= minVal &amp;&amp; value &lt;= maxVal)
+            return value;
+        std::cout &lt;&lt; "Введи число от " &lt;&lt; minVal &lt;&lt; " до " &lt;&lt; maxVal &lt;&lt; ": ";
+    }
+}</code></pre>
+<div class="simple"><b>Просто:</b> раньше буква в поле числа ломала игру: программа входила в бесконечный цикл ошибок. Теперь мы сначала забираем ввод целиком как текст (текст сломать нельзя), а потом аккуратно проверяем: это число? после него нет мусора? оно в диапазоне? Нет — вежливо переспрашиваем.</div>
+<div class="smart"><b>Умно:</b> прямое <code>cin &gt;&gt; x</code> при нечисловом вводе ставит поток в fail state (все следующие чтения мгновенно проваливаются) и оставляет мусор в буфере — отсюда классический вечный цикл. Классическое лечение <code>cin.clear() + cin.ignore()</code> надо повторять у каждого чтения; наш способ убирает проблему архитектурно: парс-ошибки портят только временный stringstream. Три проверки: <code>ss &gt;&gt; value</code> — число извлеклось; <code>!(ss &gt;&gt; extra)</code> — после числа пусто (отсекает «5абв»); диапазон. Проверка <code>!std::getline(...)</code> ловит EOF (Ctrl+Z) — выходим, а не крутимся вечно.</div>
+</div>
+
+<!-- ================= МЕХАНИКИ ================= -->
+<h2><span class="num">5</span>Игровая логика и приёмы</h2>
+
+<svg viewBox="0 0 840 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Формула урона">
+  <defs><marker id="ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#6b675f" stroke-width="1.5"/></marker></defs>
+  <rect x="20" y="45" width="150" height="60" rx="8" fill="#EEEDFE" stroke="#534AB7"/>
+  <text x="95" y="70" text-anchor="middle" font-family="Consolas" font-size="13" fill="#26215C">rollDamage</text>
+  <text x="95" y="90" text-anchor="middle" font-family="Georgia" font-size="12" fill="#534AB7">бросок min..max</text>
+  <rect x="230" y="45" width="170" height="60" rx="8" fill="#E1F5EE" stroke="#0F6E56"/>
+  <text x="315" y="70" text-anchor="middle" font-family="Consolas" font-size="13" fill="#04342C">× multiplierVS</text>
+  <text x="315" y="90" text-anchor="middle" font-family="Georgia" font-size="12" fill="#0F6E56">матрица атака×броня</text>
+  <rect x="460" y="45" width="170" height="60" rx="8" fill="#FAEEDA" stroke="#854F0B"/>
+  <text x="545" y="70" text-anchor="middle" font-family="Consolas" font-size="13" fill="#412402">× (1 − resist)</text>
+  <text x="545" y="90" text-anchor="middle" font-family="Georgia" font-size="12" fill="#854F0B">резист брони 20/10/0%</text>
+  <rect x="690" y="45" width="130" height="60" rx="8" fill="#E6F1FB" stroke="#185FA5"/>
+  <text x="755" y="70" text-anchor="middle" font-family="Consolas" font-size="13" fill="#042C53">static_cast</text>
+  <text x="755" y="90" text-anchor="middle" font-family="Georgia" font-size="12" fill="#185FA5">double → int</text>
+  <line x1="170" y1="75" x2="226" y2="75" stroke="#6b675f" stroke-width="1.3" marker-end="url(#ar3)"/>
+  <line x1="400" y1="75" x2="456" y2="75" stroke="#6b675f" stroke-width="1.3" marker-end="url(#ar3)"/>
+  <line x1="630" y1="75" x2="686" y2="75" stroke="#6b675f" stroke-width="1.3" marker-end="url(#ar3)"/>
+  <text x="420" y="132" text-anchor="middle" font-family="Georgia" font-size="13" fill="#6b675f">computeDamage: перед всем этим — проверка уворота по броне цели (tryRoll + dodgeChance)</text>
+</svg>
+
+<h3>Атаки как данные + матрица урона</h3>
+<div class="card">
+<p><b>Идея.</b> Атака — не функция с if-ами, а запись <code>struct Attack</code>: имя, разброс урона, три множителя (против тяжёлой/средней/лёгкой), стоимость. Итоговый урон = бросок × множитель по броне цели × (1 − резист брони цели).</p>
+<div class="simple"><b>Просто:</b> «камень-ножницы-бумага»: физика воина буксует о латы, но рвёт лёгкую броню; магия наоборот плавит латников. Все правила лежат в табличке, а не размазаны по коду.</div>
+<div class="smart"><b>Умно:</b> это «data-driven» подход: добавить новую атаку = добавить одну строку данных, движок менять не надо. Матрица и резист — два разных слоя: матрица отвечает за matchup конкретной атаки, резист — за общую «толщину» брони. Баланс (95 HP воина, 85 HP + реген 7 у мага, резист 20/10/0) подобран симуляцией ~100 000 автоматических боёв до ~50/50.</div>
+</div>
+
+<h3>Уворот и шансы</h3>
+<div class="card">
+<p><b>Идея.</b> Шанс уворота зависит от брони владельца: тяжёлая 5%, средняя 15%, лёгкая 30%. Перед уроном бросается <code>tryRoll(dodgeChance(target.armor))</code>: успех — атака промахнулась, выходим из <code>attackTarget</code> через ранний <code>return</code>.</p>
+<div class="trap"><b>Тонкость:</b> ресурс списывается в <code>useAttack</code> <i>до</i> проверки уворота. То есть промахнувшаяся ульта всё равно сжигает 50 ярости. Это осознанное упрощение — и готовый ответ на вопрос «что бы ты улучшил» (варианты: списывать после попадания, или дать ульте свойство «не мажет»).</div>
+</div>
+
+<h3>Ресурсы: ярость и мана</h3>
+<div class="card">
+<p><b>Идея.</b> Экономики зеркальные: мага мана «сверху вниз» (старт 100, заклинания тратят, +7 в начале хода через <code>onTurnStart</code>, потолок 100), воина ярость «снизу вверх» (старт 0, +5 за нанесённый удар, +10 за полученный — через хуки, потолок 50, ульта стоит 50).</p>
+<div class="simple"><b>Просто:</b> маг начинает бой богачом и постепенно беднеет, воин — злится от драки и к середине боя взрывается ультой. Потолок ярости = цене ульты: накопил — разрядился — копи заново.</div>
+<div class="where"><b>Где в коде:</b> <code>canAfford/payFor</code> (можно ли платить и как), <code>onDealDamage/onTakeDamage</code> (накопление ярости), <code>onTurnStart</code> (реген маны), приватный <code>addRage</code> с капом.</div>
+</div>
+
+<h3>Фабрика бойцов и меню</h3>
+<div class="card">
+<p><b>Идея.</b> <code>createFighter()</code> — фабричная функция: спрашивает класс и броню и возвращает готовый объект как <code>Character*</code>. Ограничение из задания зашито в саму структуру меню: воину предлагаются только тяжёлая/средняя, магу — средняя/лёгкая: запрещённый вариант просто не существует на экране.</p>
+<div class="smart"><b>Умно:</b> «фабрика» — паттерн создания: вызывающий код (<code>main</code>) не знает, какой конкретно класс родился, и работает с ним через базовый интерфейс. Внутри — тернарный оператор <code>условие ? да : нет</code> для выбора брони. Нумерация меню — человеческая, с 1: игрок жмёт 1..N, код делает <code>readInt(1, N) − 1</code> и работает с индексами 0..N−1.</div>
+</div>
+
+<h3>Разделение логики и вывода, целочисленная математика</h3>
+<div class="card">
+<p><b>Идея.</b> Весь «экран» собирается в <code>drawBoard</code> (очистка + табло двух бойцов) и <code>healthBar</code>; боевые правила вывода не касаются. Полоска здоровья: <code>filled = cur * total / max</code>.</p>
+<div class="trap"><b>Тонкость:</b> порядок операций важен: <code>cur / max * total</code> в целых числах даст 0 почти всегда (51/85 = 0), поэтому <b>сначала умножаем, потом делим</b>. И <code>static_cast&lt;int&gt;</code> при уроне <i>отбрасывает</i> дробь (5.9 → 5), а не округляет — явный каст ещё и глушит предупреждение о потере точности.</div>
+</div>
+
+<!-- ================= ЛОВУШКИ ================= -->
+<h2><span class="num">6</span>Вопросы-ловушки (какие могут задать на защите)</h2>
+
+<div class="qa"><div class="q">Почему деструктор Character виртуальный? Что случится, если убрать virtual?</div>
+<div class="a"><code>delete p1</code> идёт через <code>Character*</code>, а объект — Warrior. Без virtual вызовется только деструктор базы — это неопределённое поведение, ресурсы наследника не освободятся корректно. С virtual вызов уходит в правильный деструктор через vtable.</div></div>
+
+<div class="qa"><div class="q">Чем отличается перегрузка (overload) от переопределения (override)?</div>
+<div class="a">Перегрузка — несколько функций с одним именем, но разными параметрами, выбирается на этапе компиляции. Переопределение — наследник заменяет виртуальный метод базы с той же сигнатурой, выбирается в рантайме через vtable. У нас переопределение: <code>getClassName</code> в Warrior/Mage.</div></div>
+
+<div class="qa"><div class="q">Почему поля в protected, а не private? А почему не public?</div>
+<div class="a">private скрыл бы <code>health/armor/attacks</code> даже от Warrior/Mage, которым они нужны. public сломал бы инкапсуляцию — кто угодно мог бы записать в health мусор мимо <code>takeDamage</code>. protected — середина: наследникам можно, чужим нельзя.</div></div>
+
+<div class="qa"><div class="q">В attackTarget вы читаете target.armor — но armor же protected, а target чужой объект?</div>
+<div class="a">Доступ в C++ проверяется на уровне <b>класса</b>, а не объекта: метод класса Character имеет доступ к protected/private-полям <i>любого</i> объекта Character (и наследников через тип базы). Поэтому <code>target.armor</code> внутри метода Character легален.</div></div>
+
+<div class="qa"><div class="q">Что такое срезка (slicing)? Где она могла бы случиться?</div>
+<div class="a">Если полиморфный объект передать/присвоить <b>по значению</b> как базу — <code>Character c = *p1;</code> — скопируется только «базовая часть», ярость воина и его vtable-поведение потеряются: <code>c.getClassName()</code> скажет «Боец». Поэтому везде передаём по ссылке (<code>Character&amp;</code>) или указателю.</div></div>
+
+<div class="qa"><div class="q">Почему нельзя просто rand() % 11 + 5?</div>
+<div class="a">Два греха: слабый генератор и modulo bias — если диапазон rand() не делится нацело на 11, младшие значения выпадают чаще, разброс нечестный. <code>uniform_int_distribution</code> математически честный, mt19937 — качественный движок.</div></div>
+
+<div class="qa"><div class="q">Почему движок rng глобальный и один, а распределение создаётся в функции каждый раз?</div>
+<div class="a">Движок хранит состояние и должен «крутиться» непрерывно; пересоздание = пересев = плохая случайность (и дорого). Распределение — лёгкий объект без важного состояния, создавать его дёшево.</div></div>
+
+<div class="qa"><div class="q">Что было бы, если игрок вводит «абв» при старом вводе cin &gt;&gt; x?</div>
+<div class="a">Поток вставал в fail state, «абв» оставался в буфере, каждый следующий <code>&gt;&gt;</code> мгновенно проваливался — бесконечный цикл ошибок. Решение: читать всю строку getline (не фейлится), парсить через stringstream, при ошибке переспрашивать. Плюс проверка <code>!(ss &gt;&gt; extra)</code> отсекает «5абв», а проверка результата getline — EOF.</div></div>
+
+<div class="qa"><div class="q">Почему в списке инициализации maxHealth(health) работает, хотя maxHealth объявлен после health?</div>
+<div class="a">Поля инициализируются в порядке объявления: сначала health (из параметра), потом maxHealth — от уже готового поля... на самом деле от <i>параметра</i> health (имена совпадают, берётся параметр). Важно правило: порядок инициализации определяется порядком объявления полей, поэтому список пишем в том же порядке — иначе можно случайно читать ещё не созданное поле.</div></div>
+
+<div class="qa"><div class="q">Чем enum class лучше обычного enum?</div>
+<div class="a">Не сорит именами в общую область видимости (нужен префикс Armor::), не преобразуется неявно в int, нельзя сравнить с другим enum — типобезопасность. Минус-следствие: для печати нужна своя функция-переводчик (armorToString).</div></div>
+
+<div class="qa"><div class="q">Зачем static_cast, нельзя ли просто присвоить double в int?</div>
+<div class="a">Неявное сужение работает, но компилятор при /W4 предупреждает о потере точности. static_cast — явное «я понимаю, что отбрасываю дробь». Важно: отбрасывает, а не округляет: 13.9 → 13.</div></div>
+
+<div class="qa"><div class="q">Промах по увороту — а ресурс атаки уже потрачен. Это баг?</div>
+<div class="a">Осознанное упрощение: payFor вызывается в useAttack до attackTarget. Знаю об этом; варианты починки — платить после попадания либо дать ульте флаг «без промаха». Хороший кандидат на доработку.</div></div>
+
+<div class="qa"><div class="q">Почему createFighter возвращает указатель, а не объект Character?</div>
+<div class="a">Тип бойца известен только в рантайме (выбор игрока), а вернуть «по значению как Character» = срезка. Указатель на базу хранит любого наследника без потерь и включает полиморфизм. Цена — обязанность вызвать delete (в проде — unique_ptr).</div></div>
+
+<div class="qa"><div class="q">Что делает SetConsoleOutputCP(1251)?</div>
+<div class="a">Говорит консоли Windows интерпретировать байты вывода как кодировку Windows-1251 — в ней сохранён исходник, иначе кириллица превращается в кракозябры. Парная SetConsoleCP — про ввод. Альтернатива — всё в UTF-8 (chcp 65001 + флаг /utf-8).</div></div>
+
+<div class="qa"><div class="q">Почему в меню игрок жмёт с 1, а вектору нужен индекс с 0?</div>
+<div class="a">Людям привычна нумерация с 1, массивам — с 0. Правило: интерфейс человеческий, индексация машинная; на границе — конверсия <code>readInt(1, N) − 1</code>, и диапазон проверен до обращения к вектору (защита от выхода за границы).</div></div>
+
+<!-- ================= БЛИЦ ================= -->
+<h2><span class="num">7</span>Блиц-таблица: определения одной строкой</h2>
+
+<table>
+<tr><th>Термин</th><th>Одной строкой</th></tr>
+<tr><td>Класс</td><td>Пользовательский тип: данные + методы над ними</td></tr>
+<tr><td>Объект</td><td>Экземпляр класса в памяти</td></tr>
+<tr><td>Инкапсуляция</td><td>Скрытие данных; доступ только через методы, защита инвариантов</td></tr>
+<tr><td>Наследование</td><td>Класс-потомок получает всё от базового и добавляет своё (is-a)</td></tr>
+<tr><td>Полиморфизм</td><td>Один интерфейс — разное поведение; вызов метода реального класса через vtable</td></tr>
+<tr><td>virtual</td><td>Метод можно переопределить; вызов решается в рантайме</td></tr>
+<tr><td>override</td><td>Пометка «я переопределяю virtual»; компилятор сверяет сигнатуру</td></tr>
+<tr><td>Чисто виртуальный (= 0)</td><td>Метод без тела; класс становится абстрактным, создать нельзя — только наследников (в моём коде нет, но знаю)</td></tr>
+<tr><td>Виртуальный деструктор</td><td>Обязателен при delete через указатель на базу, иначе UB</td></tr>
+<tr><td>Конструктор</td><td>Метод создания объекта; поля задаются списком инициализации</td></tr>
+<tr><td>Список инициализации</td><td><code>: поле(значение)</code>; порядок исполнения = порядок объявления полей</td></tr>
+<tr><td>struct vs class</td><td>Одно и то же; в struct по умолчанию public, в class — private</td></tr>
+<tr><td>enum class</td><td>Типобезопасное перечисление со своей областью имён</td></tr>
+<tr><td>Указатель</td><td>Переменная-адрес; new/delete, разыменование *</td></tr>
+<tr><td>Ссылка</td><td>Псевдоним объекта; не бывает нулевой, привязана навсегда</td></tr>
+<tr><td>const-метод</td><td>Обещание не менять объект, проверяется компилятором</td></tr>
+<tr><td>Срезка</td><td>Копирование наследника «по значению как базы» теряет его часть</td></tr>
+<tr><td>std::vector</td><td>Динамический массив, сам управляет памятью</td></tr>
+<tr><td>range-for</td><td>«Для каждого элемента контейнера» — обход без индексов</td></tr>
+<tr><td>mt19937 + distribution</td><td>Движок случайности + честная укладка в диапазон</td></tr>
+<tr><td>stringstream</td><td>Поток над строкой; безопасный парсинг ввода</td></tr>
+<tr><td>fail state</td><td>Ошибочное состояние потока: все чтения проваливаются до clear()</td></tr>
+<tr><td>static_cast</td><td>Явное преобразование типов, проверяемое компилятором</td></tr>
+<tr><td>Тернарный оператор</td><td><code>условие ? значение1 : значение2</code> — if-else в одну строку</td></tr>
+<tr><td>Фабрика</td><td>Функция/класс, создающие объекты и прячущие конкретный тип</td></tr>
+<tr><td>Хук / шаблонный метод</td><td>База зовёт виртуальные «точки», наследники подставляют своё</td></tr>
+<tr><td>Data-driven</td><td>Правила лежат в данных (struct Attack), а не в if-ах</td></tr>
+</table>
+
+<div class="danger"><b>Перед защитой проверь на себе:</b> можешь ли ты, глядя в этот список, к каждому термину назвать <i>место в своём коде</i>, где он используется? Именно этого чаще всего ждут: не определение из учебника, а «покажи в своём проекте».</div>
+
+</div></body>
+</html>

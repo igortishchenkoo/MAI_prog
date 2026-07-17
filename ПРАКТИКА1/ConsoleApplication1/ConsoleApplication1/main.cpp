@@ -4,6 +4,7 @@
 #include <random>
 #include <vector>
 #include <cstdlib>
+#include <sstream>
 
 void clearScreen() {
 	system("cls");
@@ -19,6 +20,19 @@ int rollDamage(int minDmg, int maxDmg) {
 bool tryRoll(int percent) {
 	std::uniform_int_distribution<int> dist(1, 100);
 	return dist(rng) <= percent;
+}
+
+int readInt(int minVal, int maxVal) {
+	while (true) {
+		std::string line;
+		if (!std::getline(std::cin, line)) std::exit(0);
+		std::stringstream ss(line);
+		int value;
+		std::string extra;
+		if (ss >> value && !(ss >> extra) && value >= minVal && value <= maxVal)
+			return value;
+		std::cout << "Введи число от " << minVal << " до " << maxVal << ": ";
+	}
 }
 
 enum class  Armor { Heavy, Medium, Light };
@@ -138,7 +152,7 @@ public:
 	}
 
 	void showAttacks() const {
-		int i = 0;
+		int i = 1;
 		for (const Attack& atk : attacks) {
 			std::cout << i << ") " << atk.name << "\n";
 			i++;
@@ -151,15 +165,11 @@ public:
 	}
 
 	int askAttackIndex() const {
-		int index;
 		while (true) {
-			std::cin >> index;
-			if (index < 0 || index >= static_cast<int>(attacks.size())) {
-				std::cout << "Нет такой атаки, ещё раз: ";
-				continue;
-			}
+			std::cout << "Твой выбор: ";
+			int index = readInt(1, static_cast<int>(attacks.size())) - 1;
 			if (!canAfford(attacks[index])) {
-				std::cout << "Недостаточно ресурсов, выбери что то ещё: ";
+				std::cout << "Недостаточно ресурсов, выбери что то ещё.\n";
 				continue;
 			}
 			return index;
@@ -276,21 +286,16 @@ void runBattle(Character& p1, Character& p2) {
 }
 
 Character* createFighter() {
-	std::cout << "Выберите класс:\n0) Воин\n1) Маг\n";
-	int cls;
-	std::cin >> cls;
+	std::cout << "Выберите класс:\n1) Воин\n2) Маг\nТвой выбор: ";
+	int cls = readInt(1, 2);
 
-	if (cls == 0) {
-		std::cout << "Броня:\n0) Тяжёлая\n1) Средняя\n";
-		int ar;
-		std::cin >> ar;
-		Armor armor = (ar == 0) ? Armor::Heavy : Armor::Medium;
+	if (cls == 1) {
+		std::cout << "Броня:\n1) Тяжёлая\n2) Средняя\nТвой выбор: ";
+		Armor armor = (readInt(1, 2) == 1) ? Armor::Heavy : Armor::Medium;
 		return new Warrior("Воин", 95, armor);
 	} else {
-		std::cout << "Броня:\n0) Средняя\n1) Лёгкая\n";
-		int ar;
-		std::cin >> ar;
-		Armor armor = (ar == 0) ? Armor::Medium : Armor::Light;
+		std::cout << "Броня:\n1) Средняя\n2) Лёгкая\nТвой выбор: ";
+		Armor armor = (readInt(1, 2) == 1) ? Armor::Medium : Armor::Light;
 		return new Mage("Маг", 85, armor);
 	}
 }
